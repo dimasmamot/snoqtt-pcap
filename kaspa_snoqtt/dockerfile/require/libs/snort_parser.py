@@ -6,9 +6,10 @@ import json
 import os
 import time
 
-MQTT = os.environ['MQTT']
-topic = os.environ['PUBLISHED_TOPIC']
+MQTT = os.environ['ALERT_MQTT_SERVER']
+topic = os.environ['ALERT_MQTT_TOPIC']
 device_id = os.environ['DEVICE_ID']
+company = os.environ['COMPANY']
 
 snort_mqtt = mqtt.Client()
 snort_mqtt.connect(str(MQTT))
@@ -53,6 +54,7 @@ def main():
         print('alertmsg: %s' % str(am))
         buf = msg.pkt
         event = msg.event
+        snort_message["company"] = company
         snort_message["device_id"] = device_id
         snort_message["sig_gen"] = event.sig_generator
         snort_message["sig_id"] = event.sig_id
