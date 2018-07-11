@@ -1,0 +1,19 @@
+Sending build context to Docker daemon  6.152MB
+Step 1/4 : FROM debian:9-slim
+ ---> 9a091084b515
+Step 2/4 : ENV BUILD_PACKAGES="net-tools wget sed tar" PROTECTED_SUBNET="10.252.111.0/24" EXTERNAL_SUBNET='!$HOME_NET' OINKCODE="a6e57f37417785ca9af06f735bb9fd89c6985dfe" MQTT="10.252.111.240" MQTTPORT=1883 NETINT="eth0" PUBLISHED_TOPIC="snoqttv2" DEVICE_ID="sensor-1"
+ ---> Running in 249517dbf1b9
+Removing intermediate container 249517dbf1b9
+ ---> eff0efa9bf54
+Step 3/4 : COPY require /root
+ ---> 9be94887bee0
+Step 4/4 : RUN cd /root && ls -l
+ ---> Running in 1e4cd5a958f1
+total 12
+drwxr-xr-x 2 root root 4096 Jan 20 04:08 libs
+-rw-r--r-- 1 root root  874 Jan 15 00:39 pulledpork.conf
+-rw-r--r-- 1 root root   48 Jan 12 11:40 requirements.txt
+Removing intermediate container 1e4cd5a958f1
+ ---> 606df7516f84
+Successfully built 606df7516f84
+Successfully tagged snoqtt:0.001

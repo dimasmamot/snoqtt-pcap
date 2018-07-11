@@ -1,0 +1,63 @@
+Sending build context to Docker daemon  9.216kB
+Step 1/20 : FROM debian:9-slim
+ ---> 9a091084b515
+Step 2/20 : ENV PROTECTED_SUBNET="10.25.111.0/24" EXTERNAL_SUBNET='!$HOME_NET' OINKCODE="a6e57f37417785ca9af06f735bb9fd89c6985dfe"
+ ---> Using cache
+ ---> 52524963d348
+Step 3/20 : RUN apt-get update && 	apt-get install -y apt-utils build-essential &&	apt-get install -y libpcap-dev libpcre3-dev libdumbnet-dev &&	apt-get install -y bison flex &&	apt-get install -y wget zlib1g-dev &&	apt-get install -y python3-dev python3-pip sed tar libcrypt-ssleay-perl liblwp-useragent-determined-perl && 	apt-get -y upgrade
+ ---> Using cache
+ ---> d516a1d6d711
+Step 4/20 : COPY requirements.txt .
+ ---> Using cache
+ ---> 41da5cedb602
+Step 5/20 : RUN pip3 install --no-cache-dir --upgrade pip setuptools wheel && 	pip3 install --no-cache-dir -r requirements.txt
+ ---> Using cache
+ ---> 1c4c26aa3cf0
+Step 6/20 : RUN mkdir -p ~/snort_src && 	mkdir -p ~/daq_src && 	mkdir -p ~/pulledpork_src
+ ---> Using cache
+ ---> e658d2478db7
+Step 7/20 : RUN wget https://www.snort.org/downloads/snort/daq-2.0.6.tar.gz -O daq.tar.gz &&	tar -xvzf daq.tar.gz --strip-components=1 -C ~/daq_src &&	rm daq.tar.gz
+ ---> Using cache
+ ---> 62e3b3632f64
+Step 8/20 : RUN wget https://www.snort.org/downloads/snort/snort-2.9.11.1.tar.gz -O snort.tar.gz &&	tar -xvzf snort.tar.gz --strip-components=1 -C ~/snort_src &&	rm snort.tar.gz
+ ---> Using cache
+ ---> 8fbc3df23018
+Step 9/20 : RUN wget https://github.com/shirkdog/pulledpork/archive/v0.7.3.tar.gz -O pulledpork.tar.gz &&	tar -xvzf pulledpork.tar.gz --strip-components=1 -C ~/pulledpork_src &&	rm pulledpork.tar.gz
+ ---> Using cache
+ ---> d8c9ae420796
+Step 10/20 : RUN cd ~/daq_src && 	./configure && 	make && 	make install
+ ---> Using cache
+ ---> d3f776479bd0
+Step 11/20 : RUN cd ~/snort_src && 	./configure --enable-sourcefire --enable-reload && 	make && 	make install && 	ldconfig && 	ln -s /usr/local/bin/snort /usr/sbin/snort
+ ---> Using cache
+ ---> ecc8c67b7077
+Step 12/20 : RUN groupadd snort && 	useradd snort -r -s /sbin/nologin -c SNORT_IDS -g snort
+ ---> Using cache
+ ---> c752d9aac550
+Step 13/20 : RUN mkdir /etc/snort && 	mkdir /etc/snort/rules && 	mkdir /etc/snort/rules/iplists && 	mkdir /etc/snort/preproc_rules && 	mkdir /etc/snort/so_rules && 	mkdir /var/log/snort && 	mkdir /var/log/snort/archived_logs && 	mkdir /usr/local/lib/snort_dynamicrules && 	mkdir /tmp/snort && 	touch /etc/snort/rules/iplists/white_list.rules /etc/snort/rules/iplists/black_list.rules /etc/snort/rules/local.rules /etc/snort/sid-msg.map && 	chmod -R 5775 /etc/snort && 	chmod -R 5775 /var/log/snort && 	chmod -R 5775 /var/log/snort/archived_logs && 	chmod -R 5775 /usr/local/lib/snort_dynamicrules && 	chown -R snort:snort /etc/snort && 	chown -R snort:snort /var/log/snort && 	chown -R snort:snort /usr/local/lib/snort_dynamicrules && 	cp ~/snort_src/etc/*.conf* /etc/snort && 	cp ~/snort_src/etc/*.map /etc/snort && 	cp ~/snort_src/etc/*.dtd /etc/snort && 	cp ~/snort_src/src/dynamic-preprocessors/build/usr/local/lib/snort_dynamicpreprocessor/* /usr/local/lib/snort_dynamicpreprocessor/
+ ---> Using cache
+ ---> 4541747a5ecf
+Step 14/20 : RUN sed -i 	-e 's@^ipvar HOME_NET.*@ipvar HOME_NET '"$PROTECTED_SUBNET"'@' 	-e 's@^ipvar EXTERNAL_NET.*@ipvar EXTERNAL_NET '"$EXTERNAL_SUBNET"'@' 	-e 's@^var RULE_PATH.*@var RULE_PATH /etc/snort/rules@' 	-e 's@^var SO_RULE_PATH.*@var SO_RULE_PATH /etc/snort/so_rules@' 	-e 's@^var PREPROC_RULE_PATH.*@var PREPROCRULE_PATH /etc/snort/preproc_rules@' 	-e 's@^var WHITE_LIST_PATH.*@var WHITE_LIST_PATH /etc/snort/rules/iplists@' 	-e 's@^var BLACK_LIST_PATH.*@var BLACK_LIST_PATH /etc/snort/rules/iplists@' 	-e 's@^\(include $.*\)@# \1@' 	-e 's@\# include \$RULE\_PATH\/local\.rules@include \$RULE\_PATH\/local\.rules@' 	-e '/include \$RULE\_PATH\/local\.rules/a include \$RULE\_PATH\/snort\.rules' 		/etc/snort/snort.conf
+ ---> Using cache
+ ---> 2f22723c3723
+Step 15/20 : RUN cp ~/pulledpork_src/pulledpork.pl /usr/local/bin && 	chmod +x /usr/local/bin/pulledpork.pl &&	cp ~/pulledpork_src/etc/*.conf /etc/snort &&	apt-get clean
+ ---> Using cache
+ ---> 4df3cff3e42b
+Step 16/20 : COPY pulledpork.conf /etc/snort
+ ---> Using cache
+ ---> dae3acf993ac
+Step 17/20 : RUN sed -i 	-e 's@.oinkcode.@'"$OINKCODE"'@' /etc/snort/pulledpork.conf
+ ---> Using cache
+ ---> 2b1b927f13b9
+Step 18/20 : RUN /usr/local/bin/pulledpork.pl -c /etc/snort/pulledpork.conf -l &&	snort -T -c /etc/snort/snort.conf
+ ---> Using cache
+ ---> 5221b7cd093b
+Step 19/20 : EXPOSE 5000
+ ---> Using cache
+ ---> c5ee1c5b62df
+Step 20/20 : RUN sed -i '/import alert/c\import snortunsock.alert as alert' /usr/local/lib/python3.5/dist-packages/snortunsock/snort_listener.py
+ ---> Running in 982782e1f17e
+Removing intermediate container 982782e1f17e
+ ---> 697bef9543c9
+Successfully built 697bef9543c9
+Successfully tagged snoqtt:0.1
